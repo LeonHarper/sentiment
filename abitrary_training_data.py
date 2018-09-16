@@ -13,6 +13,8 @@ from sklearn.svm import SVC, LinearSVC, NuSVC
 from nltk.classify import ClassifierI
 from statistics import mode
 
+from nltk.tokenize import word_tokenize
+
 class VoteClassifier(ClassifierI):
 	def __init__(self, *classifiers):
 		self._classifiers = classifiers
@@ -33,56 +35,37 @@ class VoteClassifier(ClassifierI):
 		conf = choice_votes / len(votes)
 		return conf
 
+short_pos = open("datasets/positive.txt","r").read()
+short_neg = open("datasets/negative.txt","r").read()
 
-documents = defaultdict(list)
+documents = []
 
-from nltk.corpus import stopwords
-stop = stopwords.words('english')
+for r in short_pos.split('\n'):
+	documents.append( (r, "pos") )
 
-##one liner of loop below
-# documents = [(list(movie_reviews.words(fileid)), catagory)
-# 			for catagory in movie_reviews.catagories()
-# 			for fileid in movie_reviews.fileids(catagory)]
+for r in short_neg.split('\n'):
+	documents.append( (r, "neg") )
 
-# documents = []
+all_words = []
 
-# for catagory in movie_reviews.catagories():
-# 	for fileidin in movie_reviews.fileids(catagory):
-# 		document.append(list(movie_reviews.words(fileid)), category)
-		
+short_pos_words = word_tokenize(short_pos)
+short_neg_words = word_tokenize(short_neg)
 
-# random.shuffle(documents)f
+for w in short_pos_words:
+	all_words.append(w.lower())
 
-# print(documents[1])
+for w in short_neg_words:
+	all_words.append(w.lower())
 
-for i in mr.fileids():
-    documents[i.split('/')[0]].append(i)
-
-random.shuffle(documents['pos'])
-random.shuffle(documents['neg'])      
-
-#print(documents['pos'][:10]) # first ten pos reviews.
-#print
-#print(documents['neg'][:10]) # first ten neg reviews.
-
-
-documents = [([w for w in mr.words(i) if w.lower() not in stop and w.lower() not in string.punctuation], i.split('/')[0]) for i in mr.fileids()]
-
-random.shuffle(documents)
-
-allWords = []
-for w in mr.words():
-	allWords.append(w.lower())
-
-allWords = nltk.FreqDist(allWords)
+all_words = nltk.FreqDist(all_words)
 
 #print(allWords.most_common(15))
 #print(allWords["stupid"])
 
-wordFeatures = list(allWords.keys()) [:3000]
+wordFeatures = list(all_words.keys()) [:5000]
 
 def findFeatures(document):
-	words = set(document)
+	words = word_tokenize(document)
 	features = {}
 	for w in wordFeatures:
 		features[w] = (w in words)
@@ -93,18 +76,31 @@ def findFeatures(document):
 
 featureSets = [(findFeatures(rev), category) for (rev, category) in documents]
 
-trainingSet = featureSets[:1900]
-testingSet = featureSets[1900:] 
+random.shuffle(featureSets)
 
-# classifier = nltk.NaiveBayesClassifier.train(trainingSet)
+# positive data example
+trainingSet = featureSets[:10000]
+testingSet = featureSets[10000:] 
 
-classifier_f = open("naivebayes.pickle","rb")
-classifier = pickle.load(classifier_f)
-classifier_f.close
+#code from bias testing set
+# negative data exampleb
+# trainingSet = featureSets[100:]
+# testingSet = featureSets[:100] 
 
-
-print("Original Naive Bayes Algo accuracy: ", (nltk.classify.accuracy(classifier, testingSet))*100)
+classifier = nltk.NaiveBayesClassifier.train(trainingSet)
 classifier.show_most_informative_features(15)
+
+
+# save_classifier = open("naivebayes_short.pickle","wb")
+# pick.dump(classifier, save_classifier)
+# save_classifier.close()
+
+# classifier_f = open("naivebayes.pickle","rb")
+# classifier = pickle.load(classifier_f)
+# classifier_f.close
+
+
+# print("Original Naive Bayes Algo accuracy: ", (nltk.classify.accuracy(classifier, testingSet))*100)
 
 MNB_classifier = SklearnClassifier(MultinomialNB())
 MNB_classifier.train(trainingSet)
@@ -125,9 +121,9 @@ LogisticRegression_classifier = SklearnClassifier(LogisticRegression())
 LogisticRegression_classifier.train(trainingSet)
 print("LogisticRegression_classsifier Algo accuracy: ", (nltk.classify.accuracy(LogisticRegression_classifier, testingSet))*100)
 
-SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
-SGDClassifier_classifier.train(trainingSet)
-print("SGDClassifier_classifier Algo accuracy: ", (nltk.classify.accuracy(SGDClassifier_classifier, testingSet))*100)
+# SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
+# SGDClassifier_classifier.train(trainingSet)
+# print("SGDClassifier_classifier Algo accuracy: ", (nltk.classify.accuracy(SGDClassifier_classifier, testingSet))*100)
 
 # SVC_classifier = SklearnClassifier(SVC())
 # SVC_classifier.train(trainingSet)
@@ -145,11 +141,9 @@ print("NuSVC_classifier Algo accuracy: ", (nltk.classify.accuracy(NuSVC_classifi
 
 
 
-voted_classifier = VoteClassifier(classifier,
-								  MNB_classifier,
+voted_classifier = VoteClassifier(MNB_classifier,
 								  BernoulliNB_classifier,
 								  LogisticRegression_classifier,
-								  SGDClassifier_classifier,
 								  LinearSVC_classifier,
 								  NuSVC_classifier )
 print("voted_classifier accuracy: ", (nltk.classify.accuracy(voted_classifier, testingSet))*100)

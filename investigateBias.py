@@ -68,7 +68,7 @@ random.shuffle(documents['neg'])
 
 documents = [([w for w in mr.words(i) if w.lower() not in stop and w.lower() not in string.punctuation], i.split('/')[0]) for i in mr.fileids()]
 
-random.shuffle(documents)
+#random.shuffle(documents)
 
 allWords = []
 for w in mr.words():
@@ -93,8 +93,13 @@ def findFeatures(document):
 
 featureSets = [(findFeatures(rev), category) for (rev, category) in documents]
 
+# positive data example
 trainingSet = featureSets[:1900]
 testingSet = featureSets[1900:] 
+
+# negative data example
+trainingSet = featureSets[100:]
+testingSet = featureSets[:100] 
 
 # classifier = nltk.NaiveBayesClassifier.train(trainingSet)
 
@@ -103,8 +108,8 @@ classifier = pickle.load(classifier_f)
 classifier_f.close
 
 
-print("Original Naive Bayes Algo accuracy: ", (nltk.classify.accuracy(classifier, testingSet))*100)
-classifier.show_most_informative_features(15)
+# print("Original Naive Bayes Algo accuracy: ", (nltk.classify.accuracy(classifier, testingSet))*100)
+# classifier.show_most_informative_features(15)
 
 MNB_classifier = SklearnClassifier(MultinomialNB())
 MNB_classifier.train(trainingSet)
@@ -125,9 +130,9 @@ LogisticRegression_classifier = SklearnClassifier(LogisticRegression())
 LogisticRegression_classifier.train(trainingSet)
 print("LogisticRegression_classsifier Algo accuracy: ", (nltk.classify.accuracy(LogisticRegression_classifier, testingSet))*100)
 
-SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
-SGDClassifier_classifier.train(trainingSet)
-print("SGDClassifier_classifier Algo accuracy: ", (nltk.classify.accuracy(SGDClassifier_classifier, testingSet))*100)
+# SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
+# SGDClassifier_classifier.train(trainingSet)
+# print("SGDClassifier_classifier Algo accuracy: ", (nltk.classify.accuracy(SGDClassifier_classifier, testingSet))*100)
 
 # SVC_classifier = SklearnClassifier(SVC())
 # SVC_classifier.train(trainingSet)
@@ -145,11 +150,9 @@ print("NuSVC_classifier Algo accuracy: ", (nltk.classify.accuracy(NuSVC_classifi
 
 
 
-voted_classifier = VoteClassifier(classifier,
-								  MNB_classifier,
+voted_classifier = VoteClassifier(MNB_classifier,
 								  BernoulliNB_classifier,
 								  LogisticRegression_classifier,
-								  SGDClassifier_classifier,
 								  LinearSVC_classifier,
 								  NuSVC_classifier )
 print("voted_classifier accuracy: ", (nltk.classify.accuracy(voted_classifier, testingSet))*100)
