@@ -31,6 +31,7 @@ class VoteClassifier(ClassifierI):
 		for c in self._classifiers:
 			v = c.classify(features)
 			votes.append(v)
+
 		choice_votes = votes.count(mode(votes))
 		conf = choice_votes / len(votes)
 		return conf
@@ -38,31 +39,38 @@ class VoteClassifier(ClassifierI):
 short_pos = open("datasets/positive.txt","r").read()
 short_neg = open("datasets/negative.txt","r").read()
 
+all_words = []
 documents = []
 
-for r in short_pos.split('\n'):
-	documents.append( (r, "pos") )
+allowed_word_types = ["J"]
 
-for r in short_neg.split('\n'):
-	documents.append( (r, "neg") )
+for p in short_pos.split('\n'):
+	documents.append( (p, "pos") )
+	words = word_tokenize(p)
+	pos = nltk.pos_tag(words)
+	for w in pos:
+		if w[1][0] in allowed_word_types:
+			all_words.append(w[0].lower())
 
-all_words = []
+for p in short_neg.split('\n'):
+	documents.append( (p, "neg") )
+	words = word_tokenize(p)
+	pos = nltk.pos_tag(words)
+	for w in pos:
+		if w[1][0] in allowed_word_types:
+			all_words.append(w[0].lower())
 
-short_pos_words = word_tokenize(short_pos)
-short_neg_words = word_tokenize(short_neg)
-
-for w in short_pos_words:
-	all_words.append(w.lower())
-
-for w in short_neg_words:
-	all_words.append(w.lower())
+save_documents = open("pickles/documents.pickle","wb")
+pickle.dump(documents, save_documents)
+save_documents.close()
 
 all_words = nltk.FreqDist(all_words)
 
-#print(allWords.most_common(15))
-#print(allWords["stupid"])
-
 wordFeatures = list(all_words.keys()) [:5000]
+
+save_word_features = open("pickles/wordFeatures.pickle","wb")
+pickle.dump(wordFeatures, save_word_features)
+save_word_features.close()
 
 def findFeatures(document):
 	words = word_tokenize(document)
@@ -72,8 +80,6 @@ def findFeatures(document):
 
 	return features
 
-#print((findFeatures(mr.words('neg/cv000_29416.txt'))))
-
 featureSets = [(findFeatures(rev), category) for (rev, category) in documents]
 
 random.shuffle(featureSets)
@@ -82,71 +88,43 @@ random.shuffle(featureSets)
 trainingSet = featureSets[:10000]
 testingSet = featureSets[10000:] 
 
-#code from bias testing set
-# negative data exampleb
-# trainingSet = featureSets[100:]
-# testingSet = featureSets[:100] 
-
 classifier = nltk.NaiveBayesClassifier.train(trainingSet)
 classifier.show_most_informative_features(15)
 
 
-save_classifier = open("naivebayes_short.pickle","wb")
+save_classifier = open("pickles/naivebayes_short.pickle","wb")
 pickle.dump(classifier, save_classifier)
 save_classifier.close()
-
-# classifier_f = open("naivebayes.pickle","rb")
-# classifier = pickle.load(classifier_f)
-# classifier_f.close
-
-
-# print("Original Naive Bayes Algo accuracy: ", (nltk.classify.accuracy(classifier, testingSet))*100)
 
 MNB_classifier = SklearnClassifier(MultinomialNB())
 MNB_classifier.train(trainingSet)
 print("MNB_classsifier Algo accuracy: ", (nltk.classify.accuracy(MNB_classifier, testingSet))*100)
 
-save_classifier = open("MNB_classifier_short.pickle","wb")
+save_classifier = open("pickles/MNB_classifier_short.pickle","wb")
 pickle.dump(MNB_classifier, save_classifier)
 save_classifier.close()
-
-# GaussianNB_classifier = SklearnClassifier(GaussianNB())
-# GaussianNB_classifier.train(trainingSet)
-# print("GaussianNB_classsifier Algo accuracy: ", (nltk.classify.accuracy(GaussianNB_classifier, testingSet))*100)
 
 BernoulliNB_classifier = SklearnClassifier(BernoulliNB())
 BernoulliNB_classifier.train(trainingSet)
 print("BernoulliNB_classsifier Algo accuracy: ", (nltk.classify.accuracy(BernoulliNB_classifier, testingSet))*100)
 
-save_classifier = open("BernoulliNB_classifier_short.pickle","wb")
+save_classifier = open("pickles/BernoulliNB_classifier_short.pickle","wb")
 pickle.dump(BernoulliNB_classifier, save_classifier)
 save_classifier.close()
-
-# LogisticRegression, SGDClassifier
-# SVC, LinearSVC, NuSVC
 
 LogisticRegression_classifier = SklearnClassifier(LogisticRegression())
 LogisticRegression_classifier.train(trainingSet)
 print("LogisticRegression_classsifier Algo accuracy: ", (nltk.classify.accuracy(LogisticRegression_classifier, testingSet))*100)
 
-save_classifier = open("LogisticRegression_classifier_short.pickle","wb")
+save_classifier = open("pickles/LogisticRegression_classifier_short.pickle","wb")
 pickle.dump(LogisticRegression_classifier, save_classifier)
 save_classifier.close()
-
-
-# SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
-# SGDClassifier_classifier.train(trainingSet)
-# print("SGDClassifier_classifier Algo accuracy: ", (nltk.classify.accuracy(SGDClassifier_classifier, testingSet))*100)
-
-# SVC_classifier = SklearnClassifier(SVC())
-# SVC_classifier.train(trainingSet)
-# print("SVC_classifier Algo accuracy: ", (nltk.classify.accuracy(SVC_classifier, testingSet))*100)
 
 LinearSVC_classifier = SklearnClassifier(LinearSVC())
 LinearSVC_classifier.train(trainingSet)
 print("LinearSVC_classifier Algo accuracy: ", (nltk.classify.accuracy(LinearSVC_classifier, testingSet))*100)
 
-save_classifier = open("LinearSVC_classifier_short.pickle","wb")
+save_classifier = open("pickles/LinearSVC_classifier_short.pickle","wb")
 pickle.dump(LinearSVC_classifier, save_classifier)
 save_classifier.close()
 
@@ -154,12 +132,9 @@ NuSVC_classifier = SklearnClassifier(NuSVC())
 NuSVC_classifier.train(trainingSet)
 print("NuSVC_classifier Algo accuracy: ", (nltk.classify.accuracy(NuSVC_classifier, testingSet))*100)
 
-save_classifier = open("NuSVC_classifier_short.pickle","wb")
+save_classifier = open("pickles/NuSVC_classifier_short.pickle","wb")
 pickle.dump(NuSVC_classifier, save_classifier)
 save_classifier.close()
-
-
-
 
 voted_classifier = VoteClassifier(MNB_classifier,
 								  BernoulliNB_classifier,

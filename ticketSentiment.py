@@ -64,23 +64,23 @@ open_file = open("pickles/naivebayes_short.pickle", "rb")
 naivebayes_short = pickle.load(open_file)
 open_file.close()
 
-open_file = open("pickles/MNB_classifier.pickle", "rb")
+open_file = open("pickles/MNB_classifier_short.pickle", "rb")
 MNB_classifier = pickle.load(open_file)
 open_file.close()
 
-open_file = open("pickles/BernoulliNB_classifier.pickle", "rb")
-BernoulliNB_classifier_short = pickle.load(open_file)
+open_file = open("pickles/BernoulliNB_classifier_short.pickle", "rb")
+BernoulliNB_classifier = pickle.load(open_file)
 open_file.close()
 
-open_file = open("pickles/LogisticRegression_classifier.pickle", "rb")
+open_file = open("pickles/LogisticRegression_classifier_short.pickle", "rb")
 LogisticRegression_classifier = pickle.load(open_file)
 open_file.close()
 
-open_file = open("pickles/LinearSVC_classifier.pickle", "rb")
+open_file = open("pickles/LinearSVC_classifier_short.pickle", "rb")
 LinearSVC_classifier = pickle.load(open_file)
 open_file.close()
 
-open_file = open("pickles/NuSVC_classifier.pickle", "rb")
+open_file = open("pickles/NuSVC_classifier_short.pickle", "rb")
 NuSVC_classifier = pickle.load(open_file)
 open_file.close()
 
@@ -92,5 +92,5 @@ voted_classifier = VoteClassifier(MNB_classifier,
 
 
 def sentiment(text):
-	feats = find_features(text)
+	feats = findFeatures(text)
 	return voted_classifier.classify(feats),voted_classifier.confidence(feats)
